@@ -1,8 +1,6 @@
-from agents.image_analyzer import (
-    test_connection,
-    analyze_image
-)
 import streamlit as st
+
+from agents.image_analyzer import analyze_image
 
 st.set_page_config(
     page_title="Dayyan's Instagram AI Assistant",
@@ -12,13 +10,7 @@ st.set_page_config(
 
 st.title("📷 Dayyan's Instagram AI Assistant")
 
-st.write("Welcome! This app will help analyze your photos for Instagram.")
-
-if st.button("Test Gemini Connection"):
-    with st.spinner("Connecting to Gemini..."):
-        result = test_connection()
-
-    st.success(result)
+st.write("Upload one or more photos to analyze them with AI.")
 
 uploaded_files = st.file_uploader(
     "Upload your photos",
@@ -28,18 +20,15 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
 
-    first_image = uploaded_files[0]
-
-    if st.button("Analyze First Image"):
-
-        with st.spinner("Gemini is analyzing your photo..."):
-
-            result = analyze_image(first_image)
-
-        st.markdown(result)
-
-if uploaded_files:
     st.success(f"You uploaded {len(uploaded_files)} photo(s).")
 
     for file in uploaded_files:
         st.image(file, caption=file.name, use_container_width=True)
+
+    if st.button("Analyze First Image"):
+
+        with st.spinner("Analyzing image..."):
+
+            result = analyze_image(uploaded_files[0])
+
+        st.markdown(result)
