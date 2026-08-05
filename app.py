@@ -1,7 +1,5 @@
 import streamlit as st
 
-from agents.image_analyzer import analyze_image
-
 st.set_page_config(
     page_title="Dayyan's Instagram AI Assistant",
     page_icon="📷",
@@ -10,25 +8,22 @@ st.set_page_config(
 
 st.title("📷 Dayyan's Instagram AI Assistant")
 
-st.write("Upload one or more photos to analyze them with AI.")
+st.markdown("""
+## Welcome!
 
-uploaded_files = st.file_uploader(
-    "Upload your photos",
-    type=["jpg", "jpeg", "png"],
-    accept_multiple_files=True
-)
+This AI assistant is built specifically for professional Instagram photography.
 
-if uploaded_files:
+Use the sidebar to navigate between tools.
 
-    st.success(f"You uploaded {len(uploaded_files)} photo(s).")
+### Available Features
 
-    for file in uploaded_files:
-        st.image(file, caption=file.name, use_container_width=True)
+- 📷 Image Analysis
+- 🎠 Carousel Planner
+- 🎨 Lightroom Editor
+- ✍️ Caption Generator
+- 🎵 Music Suggestions
 
-    if st.button("Analyze First Image"):
+---
 
-        with st.spinner("Analyzing image..."):
-
-            result = analyze_image(uploaded_files[0])
-
-        st.markdown(result)
+Made using Python + Streamlit + Google Gemini
+""")

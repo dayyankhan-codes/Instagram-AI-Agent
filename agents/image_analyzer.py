@@ -1,23 +1,39 @@
 from PIL import Image
 
 from services.gemini_service import ask_gemini
-from services.prompt_loader import load_prompt
+from services.knowledge_service import load_knowledge
 
 
-def analyze_image(image_file):
-    """
-    Analyze one uploaded image.
-    """
+def test_connection():
+    return ask_gemini(
+        "Reply only with: Gemini connection successful."
+    )
 
-    image = Image.open(image_file)
 
-    # Resize large images
-    image.thumbnail((1600, 1600))
+def analyze_image(uploaded_file):
 
-    # Load the prompt from file
-    prompt = load_prompt("image_analysis.txt")
+    image = Image.open(uploaded_file)
 
-    # Ask Gemini
-    result = ask_gemini(prompt, image)
+    with open(
+        "prompts/image_analysis.txt",
+        "r",
+        encoding="utf-8"
+    ) as file:
 
-    return result
+        prompt = file.read()
+
+    knowledge = load_knowledge()
+
+    final_prompt = f"""
+
+You are my personal photography assistant.
+
+Use the following knowledge while analyzing.
+
+{knowledge}
+
+{prompt}
+
+"""
+
+    return ask_gemini(final_prompt, image)
