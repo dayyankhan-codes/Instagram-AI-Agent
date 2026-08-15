@@ -2,7 +2,7 @@
 APP_TITLE = "Dayyan's Instagram AI Assistant"
 
 # Gemini Settings
-MODEL_NAME = "models/gemini-3.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 
 # Analysis Settings
 MAX_IMAGES = 10

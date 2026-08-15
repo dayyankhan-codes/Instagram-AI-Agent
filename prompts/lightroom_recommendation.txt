@@ -6,11 +6,11 @@ Create a completely custom Lightroom Classic recommendation specifically for thi
 
 The goal is a professional, natural, polished edit suitable for a high-quality photography portfolio and Instagram.
 
-IMPORTANT:
+IMPORTANT RULES:
 
 - Analyze the actual photograph before deciding values.
 - Never use generic values.
-- Every setting must have a fixed value.
+- Every recommended adjustment must have one fixed value.
 - Do not say "adjust to taste".
 - Do not provide ranges.
 - Do not provide multiple possible values.
@@ -21,21 +21,199 @@ IMPORTANT:
 - Do not provide carousel recommendations.
 - Keep explanations concise.
 - Only recommend meaningful adjustments.
-- If an adjustment does not need changing, use 0.
-- Boolean settings must be "Yes" or "No".
+- If a numeric adjustment does not need changing, use 0.
+- Boolean settings must use "Yes" or "No".
+- Return ONLY valid JSON.
+- Do not use Markdown.
+- Do not use code fences.
+- Do not include any text before or after the JSON.
+- Use the EXACT field names and structure below.
+- Do not add new fields.
+- Do not rename fields.
+- Do not place explanations inside settings objects.
+- Every "why" field must be a short explanation of one or two sentences.
 
-The application will display your response as professional Lightroom tables, so return ONLY valid JSON matching the supplied schema.
+RETURN THIS EXACT JSON STRUCTURE:
 
-For every major Lightroom section, provide a short "why" explanation.
+{
+  "basic": {
+    "Treatment": "Color",
+    "Profile": "Adobe Color",
+    "Temp": 0,
+    "Tint": 0,
+    "Exposure": 0,
+    "Contrast": 0,
+    "Highlights": 0,
+    "Shadows": 0,
+    "Whites": 0,
+    "Blacks": 0,
+    "Texture": 0,
+    "Clarity": 0,
+    "Dehaze": 0,
+    "Vibrance": 0,
+    "Saturation": 0
+  },
 
-The explanation should normally be one or two sentences.
+  "basic_why": "",
 
-For masking, only create masks that genuinely improve this specific photograph.
+  "tone_curve": {
+    "Highlights": 0,
+    "Lights": 0,
+    "Darks": 0,
+    "Shadows": 0
+  },
 
-For each mask provide:
-- name
-- mask type
-- exact settings
-- one short explanation
+  "tone_curve_why": "",
 
-The JSON must contain no Markdown, no code fences, and no text outside the JSON.
+  "hsl": {
+    "Red": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Orange": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Yellow": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Green": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Aqua": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Blue": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Purple": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    },
+    "Magenta": {
+      "Hue": 0,
+      "Saturation": 0,
+      "Luminance": 0
+    }
+  },
+
+  "hsl_why": "",
+
+  "color_grading": {
+    "Shadows": {
+      "Hue": 0,
+      "Saturation": 0
+    },
+    "Midtones": {
+      "Hue": 0,
+      "Saturation": 0
+    },
+    "Highlights": {
+      "Hue": 0,
+      "Saturation": 0
+    },
+    "Balance": 0
+  },
+
+  "color_grading_why": "",
+
+  "detail": {
+    "Sharpening Amount": 0,
+    "Radius": 1.0,
+    "Detail": 0,
+    "Masking": 0,
+    "Noise Reduction": 0,
+    "Color Noise Reduction": 25
+  },
+
+  "detail_why": "",
+
+  "lens_corrections": {
+    "Remove Chromatic Aberration": "Yes",
+    "Enable Profile Corrections": "Yes"
+  },
+
+  "lens_corrections_why": "",
+
+  "effects": {
+    "Vignette Amount": 0,
+    "Midpoint": 50,
+    "Feather": 50,
+    "Grain": 0
+  },
+
+  "effects_why": "",
+
+  "calibration": {
+    "Shadow Tint": 0,
+    "Red Primary Hue": 0,
+    "Red Primary Saturation": 0,
+    "Green Primary Hue": 0,
+    "Green Primary Saturation": 0,
+    "Blue Primary Hue": 0,
+    "Blue Primary Saturation": 0
+  },
+
+  "calibration_why": "",
+
+  "masking": [
+    {
+      "name": "",
+      "mask_type": "",
+      "settings": {
+        "Exposure": 0,
+        "Contrast": 0,
+        "Highlights": 0,
+        "Shadows": 0,
+        "Whites": 0,
+        "Blacks": 0,
+        "Temp": 0,
+        "Tint": 0,
+        "Texture": 0,
+        "Clarity": 0,
+        "Dehaze": 0,
+        "Saturation": 0
+      },
+      "why": ""
+    }
+  ]
+}
+
+MASKING RULES:
+
+- Only include masks that genuinely improve the uploaded photograph.
+- If no masks are needed, return:
+  "masking": []
+- Do not create unnecessary masks.
+- Use realistic Lightroom mask types such as:
+  "Select Sky"
+  "Select Subject"
+  "Linear Gradient"
+  "Radial Gradient"
+  "Brush"
+  "Color Range"
+  "Luminance Range"
+
+IMPORTANT FINAL CHECK:
+
+Before returning the response, verify that:
+
+1. The response is valid JSON.
+2. Every required top-level field exists.
+3. The field names exactly match the schema.
+4. Explanations are stored ONLY in the separate "*_why" fields.
+5. HSL contains all eight colors.
+6. No field named "Explanation" exists.
+7. No additional fields exist.
+8. No Markdown or code fences are included.

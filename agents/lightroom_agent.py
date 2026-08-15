@@ -1,72 +1,103 @@
-import json
-
 from PIL import Image
+import io
+import json
 
 from services.gemini_service import ask_gemini
 from services.prompt_loader import load_prompt
-from services.knowledge_service import load_knowledge
 
-
-def generate_lightroom_recommendation(uploaded_file):
+def prepare_image(uploaded_file):
     """
-    Analyze an image and generate structured Lightroom Classic settings.
+    Resize and optimize the uploaded image before sending it to Gemini.
+    This reduces API processing time while preserving enough detail
+    for photography analysis.
     """
 
     image = Image.open(uploaded_file)
 
-    if image.mode != "RGB":
+    # Convert unsupported modes to RGB
+    if image.mode not in ("RGB", "RGBA"):
         image = image.convert("RGB")
 
-    prompt = load_prompt("lightroom_recommendation.txt")
-    knowledge = load_knowledge()
+    # Limit image dimensions
+    max_size = 1600
 
-    final_prompt = f"""
-You are my personal professional photography and Lightroom Classic assistant.
-
-Use the photographer knowledge below only when relevant:
-
-{knowledge}
-
-Follow these instructions exactly:
-
-{prompt}
-
-Return ONLY valid JSON.
-Do not use Markdown.
-Do not use ```json.
-Do not write anything before or after the JSON.
-"""
-
-    result = ask_gemini(
-        final_prompt,
-        image
+    image.thumbnail(
+        (max_size, max_size)
     )
 
-    if not isinstance(result, str):
-        return result
+    # Save optimized version in memory
+    buffer = io.BytesIO()
 
-    if result.startswith("❌"):
-        return result
+    image.save(
+        buffer,
+        format="JPEG",
+        quality=85,
+        optimize=True
+    )
 
-    # Remove accidental Markdown code fences if Gemini adds them.
-    cleaned = result.strip()
+    buffer.seek(0)
 
-    if cleaned.startswith("```json"):
-        cleaned = cleaned[7:]
+    optimized_image = Image.open(buffer)
 
-    if cleaned.startswith("```"):
-        cleaned = cleaned[3:]
+    return optimized_image
 
-    if cleaned.endswith("```"):
-        cleaned = cleaned[:-3]
 
-    cleaned = cleaned.strip()
+def generate_lightroom_recommendation(uploaded_file):
 
-    try:
-        return json.loads(cleaned)
+    prompt = load_prompt(
+        "lightroom_recommendation.txt"
+    )
 
-    except json.JSONDecodeError:
-        return {
-            "error": "Gemini returned an invalid JSON response.",
-            "raw_response": result
-        }
+    optimized_image = prepare_image(
+        uploaded_file
+    )
+
+    response = ask_gemini(
+        prompt,
+        optimized_image
+    )
+
+    if isinstance(response, str):
+
+        if response.startswith("❌"):
+            return {
+                "error": response
+            }
+
+        try:
+
+            # Remove accidental markdown fences if Gemini adds them
+            cleaned_response = response.strip()
+
+            if cleaned_response.startswith("```json"):
+
+                cleaned_response = cleaned_response.replace(
+                    "```json",
+                    "",
+                    1
+                )
+
+            if cleaned_response.startswith("```"):
+
+                cleaned_response = cleaned_response.replace(
+                    "```",
+                    "",
+                    1
+                )
+
+            if cleaned_response.endswith("```"):
+
+                cleaned_response = cleaned_response[:-3]
+
+            return json.loads(
+                cleaned_response.strip()
+            )
+
+        except json.JSONDecodeError:
+
+            return {
+                "error": "Gemini returned an invalid response format.",
+                "raw_response": response
+            }
+
+    return response

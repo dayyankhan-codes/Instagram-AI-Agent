@@ -5,15 +5,36 @@ from agents.lightroom_agent import generate_lightroom_recommendation
 
 
 st.set_page_config(
-    page_title="Lightroom Editor",
-    page_icon="🎨",
+    page_title="PhotoPilot AI",
+    page_icon="📷",
     layout="wide"
 )
 
 
+def format_value(value):
+    """
+    Format Lightroom values cleanly.
+    """
+
+    if isinstance(value, float):
+
+        # Convert whole-number floats
+        # Example: 45.0 -> 45
+        if value.is_integer():
+            return str(int(value))
+
+        # Keep up to 2 decimal places
+        formatted = f"{value:.2f}"
+
+        return formatted.rstrip("0").rstrip(".")
+
+    return str(value)
+
+
 def settings_table(settings):
     """
-    Display Lightroom settings as a clean Setting / Value table.
+    Display Lightroom settings as a clean
+    Setting / Value table.
     """
 
     if not isinstance(settings, dict):
@@ -23,14 +44,21 @@ def settings_table(settings):
 
     for name, value in settings.items():
 
-        # Don't display the explanation as a setting.
-        if str(name).lower() == "why":
+        # Do not display explanation fields as settings
+        if str(name).lower() in [
+            "why",
+            "explanation"
+        ]:
             continue
 
         rows.append(
             {
-                "Setting": str(name).replace("_", " ").title(),
-                "Value": value
+                "Setting": (
+                    str(name)
+                    .replace("_", " ")
+                    .title()
+                ),
+                "Value": format_value(value)
             }
         )
 
@@ -38,16 +66,16 @@ def settings_table(settings):
 
         df = pd.DataFrame(rows)
 
-        st.table(df)
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
+        )
 
 
 def display_why(data, fallback=None):
     """
-    Display the explanation stored inside a section.
-    Supports both:
-        section["why"]
-    and
-        section_why
+    Display explanation text.
     """
 
     why = None
@@ -72,12 +100,17 @@ def display_standard_section(
     data,
     separate_why=None
 ):
+    """
+    Display a standard Lightroom section
+    containing settings and an explanation.
+    """
 
     st.markdown(f"## {title}")
 
     if not isinstance(data, dict):
 
         st.write(data)
+
         return
 
     settings_table(data)
@@ -88,32 +121,51 @@ def display_standard_section(
     )
 
 
-if "lightroom_result" not in st.session_state:
+# --------------------------------------------------
+# PAGE HEADER
+# --------------------------------------------------
 
-    st.title("🎨 Lightroom Editor")
+st.title("🎨 Lightroom Editor")
 
-    st.write(
-        "Upload a photograph and generate custom Adobe Lightroom Classic "
-        "settings specifically for that image."
-    )
+st.write(
+    "Upload a photograph and generate custom "
+    "Adobe Lightroom Classic settings specifically "
+    "for that image."
+)
 
+
+# --------------------------------------------------
+# IMAGE UPLOAD
+# --------------------------------------------------
 
 uploaded_file = st.file_uploader(
     "Upload Photo",
-    type=["jpg", "jpeg", "png"],
+    type=[
+        "jpg",
+        "jpeg",
+        "png"
+    ],
     accept_multiple_files=False
 )
 
+
+# --------------------------------------------------
+# IMAGE PREVIEW + BUTTON
+# --------------------------------------------------
 
 if uploaded_file:
 
     st.divider()
 
-    left, right = st.columns([1, 1])
+    left, right = st.columns(
+        [1, 1]
+    )
 
     with left:
 
-        st.subheader("📷 Original Photo")
+        st.subheader(
+            "📷 Original Photo"
+        )
 
         st.image(
             uploaded_file,
@@ -123,11 +175,14 @@ if uploaded_file:
 
     with right:
 
-        st.subheader("🎨 AI Lightroom Editor")
+        st.subheader(
+            "🎨 AI Lightroom Editor"
+        )
 
         st.write(
-            "The AI will analyze the photograph and create fixed "
-            "Lightroom Classic values."
+            "The AI will analyze the photograph "
+            "and create fixed Lightroom Classic "
+            "values."
         )
 
         analyze_button = st.button(
@@ -139,33 +194,50 @@ if uploaded_file:
     if analyze_button:
 
         with st.spinner(
-            "Analyzing photograph and creating Lightroom settings..."
+            "Analyzing photograph and creating "
+            "Lightroom settings..."
         ):
 
-            result = generate_lightroom_recommendation(
-                uploaded_file
+            result = (
+                generate_lightroom_recommendation(
+                    uploaded_file
+                )
             )
 
-        st.session_state["lightroom_result"] = result
-        st.session_state["lightroom_filename"] = uploaded_file.name
+        st.session_state[
+            "lightroom_result"
+        ] = result
 
+        st.session_state[
+            "lightroom_filename"
+        ] = uploaded_file.name
+
+
+# --------------------------------------------------
+# DISPLAY RESULTS
+# --------------------------------------------------
 
 if "lightroom_result" in st.session_state:
 
-    result = st.session_state["lightroom_result"]
+    result = st.session_state[
+        "lightroom_result"
+    ]
 
     st.divider()
 
-    st.subheader("🎨 Lightroom Classic Recommendation")
+    st.subheader(
+        "🎨 Lightroom Classic Recommendation"
+    )
 
     st.caption(
-        f"Settings generated for: "
+        "Settings generated for: "
         f"{st.session_state.get('lightroom_filename', 'Photo')}"
     )
 
-    # -----------------------------------------
+
+    # ----------------------------------------------
     # ERROR HANDLING
-    # -----------------------------------------
+    # ----------------------------------------------
 
     if isinstance(result, str):
 
@@ -176,23 +248,32 @@ if "lightroom_result" in st.session_state:
         else:
 
             st.error(
-                "Gemini returned an unexpected response format."
+                "Gemini returned an unexpected "
+                "response format."
             )
 
-            with st.expander("Show Response"):
+            with st.expander(
+                "Show Response"
+            ):
 
                 st.code(
                     result,
                     language="text"
                 )
 
-    elif isinstance(result, dict) and "error" in result:
+
+    elif (
+        isinstance(result, dict)
+        and "error" in result
+    ):
 
         st.error(
             result["error"]
         )
 
-        with st.expander("Show Gemini Response"):
+        with st.expander(
+            "Show Gemini Response"
+        ):
 
             st.code(
                 result.get(
@@ -202,11 +283,13 @@ if "lightroom_result" in st.session_state:
                 language="text"
             )
 
+
     elif isinstance(result, dict):
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # BASIC
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "basic" in result:
 
@@ -216,33 +299,10 @@ if "lightroom_result" in st.session_state:
                 result.get("basic_why")
             )
 
-        # -----------------------------------------
-        # WHITE BALANCE
-        # -----------------------------------------
 
-        if "white_balance" in result:
-
-            display_standard_section(
-                "White Balance",
-                result["white_balance"],
-                result.get("white_balance_why")
-            )
-
-        # -----------------------------------------
-        # PRESENCE
-        # -----------------------------------------
-
-        if "presence" in result:
-
-            display_standard_section(
-                "Presence",
-                result["presence"],
-                result.get("presence_why")
-            )
-
-        # -----------------------------------------
+        # ------------------------------------------
         # TONE CURVE
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "tone_curve" in result:
 
@@ -252,13 +312,16 @@ if "lightroom_result" in st.session_state:
                 result.get("tone_curve_why")
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # HSL
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "hsl" in result:
 
-            st.markdown("## HSL")
+            st.markdown(
+                "## HSL"
+            )
 
             hsl = result["hsl"]
 
@@ -268,65 +331,88 @@ if "lightroom_result" in st.session_state:
 
                 for color, values in hsl.items():
 
-                    if not isinstance(values, dict):
+                    if not isinstance(
+                        values,
+                        dict
+                    ):
                         continue
 
                     rows.append(
                         {
-                            "Color":
-                                str(color).title(),
+                            "Color": str(
+                                color
+                            ).title(),
 
-                            "Hue":
+                            "Hue": format_value(
                                 values.get(
                                     "Hue",
                                     values.get(
                                         "hue",
-                                        "0"
+                                        0
                                     )
-                                ),
+                                )
+                            ),
 
-                            "Saturation":
+                            "Saturation": format_value(
                                 values.get(
                                     "Saturation",
                                     values.get(
                                         "saturation",
-                                        "0"
+                                        0
                                     )
-                                ),
+                                )
+                            ),
 
-                            "Luminance":
+                            "Luminance": format_value(
                                 values.get(
                                     "Luminance",
                                     values.get(
                                         "luminance",
-                                        "0"
+                                        0
                                     )
                                 )
+                            )
                         }
                     )
 
                 if rows:
 
-                    st.table(
-                        pd.DataFrame(rows)
+                    hsl_df = pd.DataFrame(
+                        rows
+                    )
+
+                    st.dataframe(
+                        hsl_df,
+                        use_container_width=True,
+                        hide_index=True
                     )
 
             display_why(
                 hsl,
-                result.get("hsl_why")
+                result.get(
+                    "hsl_why"
+                )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # COLOR GRADING
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "color_grading" in result:
 
-            st.markdown("## Color Grading")
+            st.markdown(
+                "## Color Grading"
+            )
 
-            grading = result["color_grading"]
+            grading = result[
+                "color_grading"
+            ]
 
-            if isinstance(grading, dict):
+            if isinstance(
+                grading,
+                dict
+            ):
 
                 rows = []
 
@@ -340,39 +426,50 @@ if "lightroom_result" in st.session_state:
                         name
                     )
 
-                    if not isinstance(values, dict):
+                    if not isinstance(
+                        values,
+                        dict
+                    ):
                         continue
 
                     rows.append(
                         {
-                            "Range":
-                                name,
+                            "Range": name,
 
-                            "Hue":
+                            "Hue": format_value(
                                 values.get(
                                     "Hue",
                                     values.get(
                                         "hue",
-                                        "0"
+                                        0
                                     )
-                                ),
+                                )
+                            ),
 
-                            "Saturation":
+                            "Saturation": format_value(
                                 values.get(
                                     "Saturation",
                                     values.get(
                                         "saturation",
-                                        "0"
+                                        0
                                     )
                                 )
+                            )
                         }
                     )
 
                 if rows:
 
-                    st.table(
-                        pd.DataFrame(rows)
+                    grading_df = pd.DataFrame(
+                        rows
                     )
+
+                    st.dataframe(
+                        grading_df,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+
 
                 if "Balance" in grading:
 
@@ -382,8 +479,9 @@ if "lightroom_result" in st.session_state:
 
                     settings_table(
                         {
-                            "Balance":
-                                grading["Balance"]
+                            "Balance": grading[
+                                "Balance"
+                            ]
                         }
                     )
 
@@ -394,47 +492,57 @@ if "lightroom_result" in st.session_state:
                 )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # DETAIL
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "detail" in result:
 
             display_standard_section(
                 "Detail",
                 result["detail"],
-                result.get("detail_why")
+                result.get(
+                    "detail_why"
+                )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # LENS CORRECTIONS
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "lens_corrections" in result:
 
             display_standard_section(
                 "Lens Corrections",
-                result["lens_corrections"],
+                result[
+                    "lens_corrections"
+                ],
                 result.get(
                     "lens_corrections_why"
                 )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # EFFECTS
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "effects" in result:
 
             display_standard_section(
                 "Effects",
                 result["effects"],
-                result.get("effects_why")
+                result.get(
+                    "effects_why"
+                )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # CALIBRATION
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "calibration" in result:
 
@@ -446,28 +554,41 @@ if "lightroom_result" in st.session_state:
                 )
             )
 
-        # -----------------------------------------
+
+        # ------------------------------------------
         # MASKING
-        # -----------------------------------------
+        # ------------------------------------------
 
         if "masking" in result:
 
-            st.markdown("## Masking")
+            st.markdown(
+                "## Masking"
+            )
 
-            masks = result["masking"]
+            masks = result[
+                "masking"
+            ]
 
             if not masks:
 
                 st.info(
-                    "No additional masks are recommended "
-                    "for this photograph."
+                    "No additional masks are "
+                    "recommended for this photograph."
                 )
 
-            elif isinstance(masks, list):
+            elif isinstance(
+                masks,
+                list
+            ):
 
-                for index, mask in enumerate(masks):
+                for index, mask in enumerate(
+                    masks
+                ):
 
-                    if not isinstance(mask, dict):
+                    if not isinstance(
+                        mask,
+                        dict
+                    ):
                         continue
 
                     mask_name = mask.get(
@@ -487,7 +608,8 @@ if "lightroom_result" in st.session_state:
                     if mask_type:
 
                         st.caption(
-                            f"Mask Type: {mask_type}"
+                            f"Mask Type: "
+                            f"{mask_type}"
                         )
 
                     settings = mask.get(
@@ -503,10 +625,12 @@ if "lightroom_result" in st.session_state:
                         mask
                     )
 
+
     else:
 
         st.error(
-            "Unexpected response format received from Gemini."
+            "Unexpected response format "
+            "received from Gemini."
         )
 
         st.write(result)
