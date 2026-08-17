@@ -374,7 +374,7 @@ Possible future development includes:
 
 Photography · Artificial Intelligence · Python · Creative Technology
 
-GitHub: :contentReference[oaicite:0]{index=0}
+GitHub: [@dayyankhan-codes](https://github.com/dayyankhan-codes)
 
 ---
 
